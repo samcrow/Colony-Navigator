@@ -27,47 +27,92 @@ public class Server implements LineReadHandler {
 	/** The stream used to send data to the server */
 	protected OutputStream output;
 
-	public Server(String IPAddress, int port) {
+	protected ServerConnectionTask thread;
 
-		socket = new Socket();
+	/**
+	 * Constructor
+	 * 
+	 * @param ipAddress
+	 *            The IP address to connect to
+	 * @param port
+	 *            The port to connect over
+	 */
+	public Server(String ipAddress, int port) {
+		thread = new ServerConnectionTask(ipAddress, port);
+		thread.start();
+	}
 
-		try {
-			socket.bind(new InetSocketAddress(port));
-		} catch (IOException e) {
-			System.err.println("Could not bind to local port " + port);
-			e.printStackTrace();
+	protected class ServerConnectionTask extends Thread {
+
+		protected String ipAddress;
+		protected int port;
+
+		/**
+		 * Constructor
+		 * 
+		 * @param ipAddress
+		 *            The IP address to connect to
+		 * @param port
+		 *            The port to connect over
+		 */
+		public ServerConnectionTask(String ipAddress, int port) {
+			super("Server connection thread");
+			this.ipAddress = ipAddress;
+			this.port = port;
 		}
 
-		try {
-			socket.connect(new InetSocketAddress(IPAddress, port));
-		} catch (IOException e) {
-			System.err.println("Could not connect to " + IPAddress);
-			e.printStackTrace();
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Thread#run()
+		 */
+		@Override
+		public void run() {
+			socket = new Socket();
+
+			try {
+				InetSocketAddress portAddress = new InetSocketAddress(port);
+				socket.bind(portAddress);
+			} catch (IOException e) {
+				System.err.println("Could not bind to local port " + port);
+				e.printStackTrace();
+			}
+
+			try {
+				System.out.println("Trying to connect...");
+				socket.connect(new InetSocketAddress(ipAddress, port));
+			} catch (IOException e) {
+				System.err.println("Could not connect to " + ipAddress);
+				e.printStackTrace();
+			}
+
+			if (!socket.isConnected()) {
+				System.err.println("Not connected to the server.");
+			}
+
+			try {
+				input = new AsyncLineInputStream(socket.getInputStream());
+				input.setHandler(Server.this);// Input the outer instance of
+												// Server.
+			} catch (IOException e) {
+				System.err
+						.println("Exception getting the input stream for the socket");
+				e.printStackTrace();
+			}
+			try {
+				output = socket.getOutputStream();
+			} catch (IOException e) {
+				System.err
+						.println("Exception getting the output stream for the socket.");
+				e.printStackTrace();
+			}
 		}
 
-		if (!socket.isConnected()) {
-			System.err.println("Not connected to the server.");
-		}
-
-		try {
-			input = new AsyncLineInputStream(socket.getInputStream());
-			input.setHandler(this);
-		} catch (IOException e) {
-			System.err
-					.println("Exception getting the input stream for the socket");
-			e.printStackTrace();
-		}
-		try {
-			output = socket.getOutputStream();
-		} catch (IOException e) {
-			System.err
-					.println("Exception getting the output stream for the socket.");
-			e.printStackTrace();
-		}
 	}
 
 	@Override
 	public void lineRead(String line) {
-		System.out.println("Read line: " + line);
+		System.out.println("Read: " + line);
+
 	}
 }
