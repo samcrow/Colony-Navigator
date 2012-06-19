@@ -1,9 +1,9 @@
 package org.samcrow.data;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
+import java.io.PrintStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.HashSet;
 
 import org.samcrow.data.AsyncLineInputStream.LineReadHandler;
@@ -25,7 +25,7 @@ public class Server implements LineReadHandler {
 	protected AsyncLineInputStream input;
 
 	/** The stream used to send data to the server */
-	protected OutputStream output;
+	protected PrintStream output;
 
 	protected ServerConnectionTask thread;
 
@@ -68,26 +68,12 @@ public class Server implements LineReadHandler {
 		 */
 		@Override
 		public void run() {
-			socket = new Socket();
-
 			try {
-				InetSocketAddress portAddress = new InetSocketAddress(port);
-				socket.bind(portAddress);
-			} catch (IOException e) {
-				System.err.println("Could not bind to local port " + port);
-				e.printStackTrace();
-			}
-
-			try {
-				System.out.println("Trying to connect...");
-				socket.connect(new InetSocketAddress(ipAddress, port));
-			} catch (IOException e) {
-				System.err.println("Could not connect to " + ipAddress);
-				e.printStackTrace();
-			}
-
-			if (!socket.isConnected()) {
-				System.err.println("Not connected to the server.");
+				socket = new Socket(ipAddress, port);
+			} catch (UnknownHostException e1) {
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				e1.printStackTrace();
 			}
 
 			try {
@@ -100,12 +86,15 @@ public class Server implements LineReadHandler {
 				e.printStackTrace();
 			}
 			try {
-				output = socket.getOutputStream();
+				output = new PrintStream(socket.getOutputStream());
 			} catch (IOException e) {
 				System.err
 						.println("Exception getting the output stream for the socket.");
 				e.printStackTrace();
 			}
+
+			output.println("get-colonies");
+
 		}
 
 	}
