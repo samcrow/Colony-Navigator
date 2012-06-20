@@ -1,19 +1,19 @@
 package org.samcrow.data;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.HashSet;
-
-import org.samcrow.data.AsyncLineInputStream.LineReadHandler;
 
 /**
  * Stores data associated with the server and manages synchronization
  * 
  * @author Sam Crow
  */
-public class Server implements LineReadHandler {
+public class Server {
 
 	/** The current known colonies */
 	protected HashSet<Colony> colonies = new HashSet<Colony>();
@@ -22,12 +22,12 @@ public class Server implements LineReadHandler {
 	protected Socket socket;
 
 	/** The stream used to get data from the server */
-	protected AsyncLineInputStream input;
+	protected BufferedReader input;
 
 	/** The stream used to send data to the server */
 	protected PrintStream output;
 
-	protected ServerConnectionTask thread;
+	protected ServerConnectionTask connectThread;
 
 	/**
 	 * Constructor
@@ -38,8 +38,8 @@ public class Server implements LineReadHandler {
 	 *            The port to connect over
 	 */
 	public Server(String ipAddress, int port) {
-		thread = new ServerConnectionTask(ipAddress, port);
-		thread.start();
+		connectThread = new ServerConnectionTask(ipAddress, port);
+		connectThread.start();
 	}
 
 	protected class ServerConnectionTask extends Thread {
@@ -77,9 +77,8 @@ public class Server implements LineReadHandler {
 			}
 
 			try {
-				input = new AsyncLineInputStream(socket.getInputStream());
-				input.setHandler(Server.this);// Input the outer instance of
-												// Server.
+				input = new BufferedReader(new InputStreamReader(
+						socket.getInputStream()));
 			} catch (IOException e) {
 				System.err
 						.println("Exception getting the input stream for the socket");
@@ -93,15 +92,34 @@ public class Server implements LineReadHandler {
 				e.printStackTrace();
 			}
 
-			output.println("get-colonies");
-
 		}
 
 	}
 
-	@Override
-	public void lineRead(String line) {
-		System.out.println("Read: " + line);
+	protected class ColonyDataRequestTask extends Thread {
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Thread#run()
+		 */
+		@Override
+		public void run() {
+			assert (socket != null && output != null);
+
+			output.println("get-colonies");
+
+			try {
+				String line;
+				// Wait until a valid line was read
+				while ((line = input.readLine()) != null)
+					;
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 
 	}
+
 }
