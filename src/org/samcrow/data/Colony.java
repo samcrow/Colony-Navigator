@@ -1,11 +1,13 @@
 package org.samcrow.data;
 
+import android.graphics.drawable.ShapeDrawable;
+
 /**
  * Stores data for one colony
  * 
  * @author Sam Crow
  */
-public class Colony {
+public class Colony extends ShapeDrawable {
 
 	/**
 	 * Constructor
