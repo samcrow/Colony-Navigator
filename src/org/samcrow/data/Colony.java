@@ -1,5 +1,10 @@
 package org.samcrow.data;
 
+import java.lang.reflect.Field;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.graphics.drawable.ShapeDrawable;
 
 /**
@@ -35,7 +40,10 @@ public class Colony extends ShapeDrawable {
 	protected double y;
 
 	/** If the colony is currently active */
-	protected boolean active;
+	protected volatile boolean active;
+
+	/** If the colony has been visited by a human */
+	protected volatile boolean visited;
 
 	/**
 	 * Get the colony's X-coordinate in meters east of the southwest corner
@@ -95,12 +103,56 @@ public class Colony extends ShapeDrawable {
 	}
 
 	/**
+	 * Get if the colony has been visited
+	 * 
+	 * @return if the colony has been visited
+	 */
+	public synchronized boolean isVisited() {
+		return visited;
+	}
+
+	/**
+	 * Set if this colony has been visited
+	 * 
+	 * @param visited
+	 *            If the colony has been visited
+	 */
+	public synchronized void setVisited(boolean visited) {
+		this.visited = visited;
+	}
+
+	/**
 	 * Get the colony's ID
 	 * 
 	 * @return the ID
 	 */
 	public synchronized int getId() {
 		return id;
+	}
+
+	/**
+	 * Convert this colony into a {@link JSONObject}.
+	 * 
+	 * @return A JSON object representation of this colony
+	 */
+	public synchronized JSONObject toJSON() {
+		JSONObject object = new JSONObject();
+
+		try {
+			for (Field field : getClass().getFields()) {
+				// For each field of this class (id, x, y, active, etc.), add it
+				// to the JSON data
+				object.put(field.getName(), field.get(this));
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		}
+
+		return object;
 	}
 
 	/*

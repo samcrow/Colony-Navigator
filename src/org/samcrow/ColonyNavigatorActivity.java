@@ -1,5 +1,6 @@
 package org.samcrow;
 
+import org.samcrow.net.ColonyChangeCallbackManager;
 import org.samcrow.net.ServerConnection;
 import org.samcrow.util.MapViewContext;
 
@@ -12,7 +13,7 @@ public class ColonyNavigatorActivity extends Activity {
 
 	private MapSurfaceView mapView;
 
-	public static ServerConnection server;
+	public static ColonyChangeCallbackManager server;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -23,7 +24,7 @@ public class ColonyNavigatorActivity extends Activity {
 		mapView = MapViewContext.get();
 		setContentView(mapView);
 
-		server = new ServerConnection("10.0.0.106", 7510);
+		server = new ServerConnection(this, "10.1.77.135", 7510);
 
 		Criteria gpsCriteria = new Criteria();
 		gpsCriteria.setAccuracy(Criteria.ACCURACY_FINE);

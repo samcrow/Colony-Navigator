@@ -3,6 +3,7 @@ package org.samcrow;
 import java.util.List;
 
 import org.samcrow.data.Colony;
+import org.samcrow.net.ColonyChangeCallbackManager.ColonyChangeListener;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -19,7 +20,8 @@ import android.view.View;
 /**
  * @author Sam Crow Handles drawing the map
  */
-public class MapSurfaceView extends View implements OnScaleGestureListener {
+public class MapSurfaceView extends View implements OnScaleGestureListener,
+		ColonyChangeListener {
 
 	/**
 	 * The current scale in the range (0, infinity), centered on 1, to display
@@ -87,9 +89,11 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	@Override
 	protected void onDraw(Canvas canvas) {
 
-		canvas.setDensity(200);// See if this makes it cleaner
+		canvas.setDensity(300);// See if this makes it cleaner
 
 		// This has to be at the beginning, before anything else is added.
+		canvas.rotate(10);// Rotate 10 degrees to correct for the colony
+							// coordinates being based on magnetic north
 		canvas.translate(relativeX / 30f * scale, relativeY / 30f * scale);
 		canvas.scale(scale, -scale, (canvas.getWidth()) / 2f,
 				(canvas.getHeight()) / 2f);
@@ -100,9 +104,9 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 		// Clear the screen
 		canvas.drawColor(Color.WHITE);
 
-		antiAliasPaint.setColor(Color.RED);
-		canvas.drawRect(getColonyMapBounds(), antiAliasPaint);
-		antiAliasPaint.setColor(Color.BLACK);
+		// antiAliasPaint.setColor(Color.RED);
+		// canvas.drawRect(getColonyMapBounds(), antiAliasPaint);
+		// antiAliasPaint.setColor(Color.BLACK);
 
 		List<Colony> colonies = ColonyNavigatorActivity.server.getColonies();
 		Location location = NavigatorLocationListener.getLocation();
@@ -124,7 +128,7 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 		// Static map elements
 		antiAliasPaint.setColor(Color.BLUE);
 		antiAliasPaint.setStrokeWidth(10);
-		canvas.drawLine(-100, -10, 1500, 280, antiAliasPaint); // Portal Road /
+		canvas.drawLine(-100, -25, 1500, 265, antiAliasPaint); // Portal Road /
 																// NM 533
 		antiAliasPaint.setStrokeWidth(5);
 		canvas.drawLine(1350, 250, 1230, 1000, antiAliasPaint); // Wrangler Road
@@ -199,7 +203,7 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 			relativeX += event.getX() - dragStartX;
 			relativeY += event.getY() - dragStartY;
 
-			invalidate();
+			postInvalidate();
 		}
 		return true;
 	}
@@ -207,7 +211,7 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	@Override
 	public boolean onScale(ScaleGestureDetector detector) {
 		scale *= detector.getScaleFactor();
-		invalidate();
+		postInvalidate();
 		return true;
 	}
 
@@ -218,5 +222,17 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 	@Override
 	public void onScaleEnd(ScaleGestureDetector detector) {
+	}
+
+	/**
+	 * Called when the list of colonies is changed
+	 * 
+	 * @param colonies
+	 *            The updated list of colonies
+	 */
+	@Override
+	public void coloniesChanged(List<Colony> colonies) {
+		postInvalidate();// Post because another thread is probably calling
+							// this.
 	}
 }
