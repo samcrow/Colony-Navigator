@@ -3,5 +3,10 @@
 
     <string name="hello">Hello World, ColonyNavigatorActivity!</string>
     <string name="app_name">Colony Navigator</string>
+    <string name="colony">Colony</string>
+    <string name="select">Select</string>
+    <string name="colony_number">Colony number</string>
+    <string name="visited">Visited</string>
+    <string name="active">Active</string>
 
 </resources>

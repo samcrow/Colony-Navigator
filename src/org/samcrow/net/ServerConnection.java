@@ -13,6 +13,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.samcrow.data.Colony;
+import org.samcrow.data.JSONSerializable;
 import org.samcrow.data.ProtocolParser;
 
 import android.app.Activity;
@@ -116,6 +117,8 @@ public class ServerConnection extends ColonyChangeCallbackManager {
 
 		// Spawn and start the thread
 		new ColonySubmitTask(colony).start();
+		// Spawn and start the thread to write the new data to the file
+		new ColonySubmitFileTask().start();
 	}
 
 	/**
@@ -347,9 +350,9 @@ public class ServerConnection extends ColonyChangeCallbackManager {
 	}
 
 	/**
+	 * This class writes the set of colonies to a file named colonies&#46;csv.
 	 * 
-	 * 
-	 * @author samcrow
+	 * @author Sam Crow
 	 */
 	private class ColonySubmitFileTask extends Thread {
 
@@ -377,7 +380,7 @@ public class ServerConnection extends ColonyChangeCallbackManager {
 				JSONObject json = new JSONObject();
 
 				synchronized (colonies) {
-					for (Colony colony : colonies) {
+					for (JSONSerializable colony : colonies) {
 						try {
 							// Add the JSON of this colony to the JSON array
 							json.append("colonies", colony.toJSON());

@@ -1,9 +1,9 @@
 package org.samcrow;
 
-import java.util.List;
+import java.util.Set;
 
 import org.samcrow.data.Colony;
-import org.samcrow.net.ColonyChangeCallbackManager.ColonyChangeListener;
+import org.samcrow.data.HardCodedColonies;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -20,8 +20,7 @@ import android.view.View;
 /**
  * @author Sam Crow Handles drawing the map
  */
-public class MapSurfaceView extends View implements OnScaleGestureListener,
-		ColonyChangeListener {
+public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 	/**
 	 * The current scale in the range (0, infinity), centered on 1, to display
@@ -46,6 +45,19 @@ public class MapSurfaceView extends View implements OnScaleGestureListener,
 	 * position
 	 */
 	private float relativeY = 0;
+
+	/**
+	 * A paint object that enables antialiasing
+	 */
+	private static final Paint kAntiAliasPaint = new Paint();
+	static {
+		kAntiAliasPaint.setAntiAlias(true);
+	}
+
+	/**
+	 * The boundaries of the colonies
+	 */
+	private Rect colonyBounds = getColonyMapBounds();
 
 	/**
 	 * @param context
@@ -89,66 +101,77 @@ public class MapSurfaceView extends View implements OnScaleGestureListener,
 	@Override
 	protected void onDraw(Canvas canvas) {
 
-		canvas.setDensity(300);// See if this makes it cleaner
-
-		// This has to be at the beginning, before anything else is added.
-		canvas.rotate(10);// Rotate 10 degrees to correct for the colony
-							// coordinates being based on magnetic north
 		canvas.translate(relativeX / 30f * scale, relativeY / 30f * scale);
-		canvas.scale(scale, -scale, (canvas.getWidth()) / 2f,
+		canvas.scale(scale, scale, (canvas.getWidth()) / 2f,
 				(canvas.getHeight()) / 2f);
-
-		Paint antiAliasPaint = new Paint();
-		antiAliasPaint.setAntiAlias(true);
 
 		// Clear the screen
 		canvas.drawColor(Color.WHITE);
 
-		// antiAliasPaint.setColor(Color.RED);
-		// canvas.drawRect(getColonyMapBounds(), antiAliasPaint);
-		// antiAliasPaint.setColor(Color.BLACK);
+		kAntiAliasPaint.setColor(Color.RED);
+		canvas.drawRect(getColonyMapBounds(), kAntiAliasPaint);
+		kAntiAliasPaint.setColor(Color.BLACK);
 
-		List<Colony> colonies = ColonyNavigatorActivity.server.getColonies();
+		Set<Colony> colonies = HardCodedColonies.colonies;
+
 		Location location = NavigatorLocationListener.getLocation();
 		if (colonies != null) {
 
 			synchronized (colonies) {
 				for (Colony colony : colonies) {
+					kAntiAliasPaint.setColor(Color.BLACK);
 					canvas.drawCircle((float) colony.getX(),
-							(float) colony.getY(), 5, antiAliasPaint);
+							(float) colony.getY(), 2, kAntiAliasPaint);
+
+					kAntiAliasPaint.setColor(Color.MAGENTA);
+					canvas.drawText(String.valueOf(colony.getId()),
+							(float) colony.getX(), (float) colony.getY(),
+							kAntiAliasPaint);
 				}
 			}
 		}
 		if (location != null) {
 			canvas.drawText("Latitude " + location.getLatitude()
 					+ " Longitude " + location.getLongitude(), 0, 100,
-					antiAliasPaint);
+					kAntiAliasPaint);
 		}
 
 		// Static map elements
-		antiAliasPaint.setColor(Color.BLUE);
-		antiAliasPaint.setStrokeWidth(10);
-		canvas.drawLine(-100, -25, 1500, 265, antiAliasPaint); // Portal Road /
+		kAntiAliasPaint.setColor(Color.BLUE);
+		kAntiAliasPaint.setStrokeWidth(10);
+		canvas.drawLine(-100, -25, 1500, 265, kAntiAliasPaint); // Portal
+																// Road /
 																// NM 533
-		antiAliasPaint.setStrokeWidth(5);
-		canvas.drawLine(1350, 250, 1230, 1000, antiAliasPaint); // Wrangler Road
+		kAntiAliasPaint.setStrokeWidth(5);
+		canvas.drawLine(1350, 250, 1230, 1000, kAntiAliasPaint); // Wrangler
+																	// Road
 
-		antiAliasPaint.setColor(Color.BLACK);
-		canvas.drawLine(0, 5, -150, 900, antiAliasPaint);// West boundary
+		kAntiAliasPaint.setColor(Color.BLACK);
+		canvas.drawLine(0, 5, -150, 900, kAntiAliasPaint);// West boundary
+	}
 
+	/**
+	 * Transform a Y coordinate to vertically flip everything
+	 * 
+	 * @param y
+	 * @return
+	 */
+	private double transformYCoordinate(double y) {
+
+		// TODO
+
+		return y;
 	}
 
 	/**
 	 * Get a rectangle representing the bounds of the known colonies. The
 	 * returned rectangle will have bottom and left sides at zero. The top and
-	 * right sides will be expanded to fit all the colonies. If the server
-	 * connection does not have a valid list of colonies, this method will
-	 * return a rectangle with all values at zero.
+	 * right sides will be expanded to fit all the colonies.
 	 * 
 	 * @return the rectangle.
 	 */
 	private Rect getColonyMapBounds() {
-		List<Colony> colonies = ColonyNavigatorActivity.server.getColonies();
+		Set<Colony> colonies = HardCodedColonies.colonies;
 
 		if (colonies == null) {
 			// No valid colonies: Return a rect with everything zero.
@@ -222,17 +245,5 @@ public class MapSurfaceView extends View implements OnScaleGestureListener,
 
 	@Override
 	public void onScaleEnd(ScaleGestureDetector detector) {
-	}
-
-	/**
-	 * Called when the list of colonies is changed
-	 * 
-	 * @param colonies
-	 *            The updated list of colonies
-	 */
-	@Override
-	public void coloniesChanged(List<Colony> colonies) {
-		postInvalidate();// Post because another thread is probably calling
-							// this.
 	}
 }

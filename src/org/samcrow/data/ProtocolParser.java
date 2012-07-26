@@ -3,6 +3,10 @@ package org.samcrow.data;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * A utility class for converting between strings sent over the network and data
  * objects
@@ -35,44 +39,27 @@ public class ProtocolParser {
 
 		List<Colony> colonies = new LinkedList<Colony>();
 
-		String[] parts = input.split(";");
+		try {
+			JSONObject json = new JSONObject(input);
 
-		for (String colonyString : parts) {
-			// colonyString should be in the format
-			// "{colony number, x, y, isActive (true or false)}"
-			try {
-				// Check that everything about this string is right
+			JSONArray array = json.getJSONArray("colonies");
 
-				// Regular expressions yay!
-				// This one matches { (one or more non-comma characters) , (...)
-				// }
-				assert (colonyString.matches("\\{[^,]+,[^,]+,[^,]+,[^,]+\\}"));
+			for (int i = 0, max = array.length(); i < max; i++) {
+				JSONObject colonyJson = array.optJSONObject(i);
+				Colony colony = new Colony();
 
-				// Remove the { from the beginning and the } from the end
-				colonyString = colonyString.substring(1);
-				colonyString = colonyString.substring(0,
-						colonyString.length() - 1);
-				colonyString = colonyString.trim();
+				colony.setActive(colonyJson.optBoolean("active"));
+				colony.setVisited(colonyJson.optBoolean("visited"));
+				colony.setId(colonyJson.optInt("id", 0));
+				colony.setX(colonyJson.optDouble("x", 0));
+				colony.setY(colonyJson.optDouble("y", 0));
 
-				// Another regular expression! Yay!
-				// This one matches a comma with zero or more whitespace
-				// characters on either side
-				String[] colonyParts = colonyString.split("[\\s]*,[\\s]*");
-				assert (colonyParts.length == 4);
-
-				int colonyNumber = Integer.valueOf(colonyParts[0]);
-				double x = Double.valueOf(colonyParts[1]);
-				double y = Double.valueOf(colonyParts[2]);
-				boolean active = colonyParts[3].equalsIgnoreCase("true") ? true
-						: false;
-
-				colonies.add(new Colony(colonyNumber, x, y, active));
-
-			} catch (Throwable e) {// If anything goes wrong
-				continue;// Stop working on this colony string. Go on to the
-							// next one.
+				colonies.add(colony);
 			}
 
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		return colonies;

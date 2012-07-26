@@ -1,7 +1,6 @@
 package org.samcrow;
 
-import org.samcrow.net.ColonyChangeCallbackManager;
-import org.samcrow.net.ServerConnection;
+import org.samcrow.stanford.R;
 import org.samcrow.util.MapViewContext;
 
 import android.app.Activity;
@@ -13,18 +12,13 @@ public class ColonyNavigatorActivity extends Activity {
 
 	private MapSurfaceView mapView;
 
-	public static ColonyChangeCallbackManager server;
-
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		MapViewContext.init(this);
-		mapView = MapViewContext.get();
-		setContentView(mapView);
-
-		server = new ServerConnection(this, "10.1.77.135", 7510);
+		setContentView(R.layout.main);
 
 		Criteria gpsCriteria = new Criteria();
 		gpsCriteria.setAccuracy(Criteria.ACCURACY_FINE);
@@ -34,7 +28,7 @@ public class ColonyNavigatorActivity extends Activity {
 		gpsCriteria.setSpeedAccuracy(Criteria.NO_REQUIREMENT);
 
 		LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-		locationManager.requestLocationUpdates(100, 0, gpsCriteria,
+		locationManager.requestLocationUpdates(1000, 0, gpsCriteria,
 				new NavigatorLocationListener(), null);
 	}
 

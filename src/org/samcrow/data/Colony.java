@@ -1,7 +1,5 @@
 package org.samcrow.data;
 
-import java.lang.reflect.Field;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -12,7 +10,7 @@ import android.graphics.drawable.ShapeDrawable;
  * 
  * @author Sam Crow
  */
-public class Colony extends ShapeDrawable {
+public class Colony extends ShapeDrawable implements JSONSerializable {
 
 	/**
 	 * Constructor
@@ -29,6 +27,10 @@ public class Colony extends ShapeDrawable {
 		this.x = x;
 		this.y = y;
 		this.active = active;
+	}
+
+	public Colony() {
+		this(0, 0, 0, false);
 	}
 
 	/** The colony's identifier */
@@ -130,29 +132,37 @@ public class Colony extends ShapeDrawable {
 		return id;
 	}
 
-	/**
-	 * Convert this colony into a {@link JSONObject}.
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @return A JSON object representation of this colony
+	 * @see org.samcrow.data.JSONSerializable#toJSON()
 	 */
+	@Override
 	public synchronized JSONObject toJSON() {
 		JSONObject object = new JSONObject();
 
 		try {
-			for (Field field : getClass().getFields()) {
-				// For each field of this class (id, x, y, active, etc.), add it
-				// to the JSON data
-				object.put(field.getName(), field.get(this));
-			}
+
+			object.put("id", id);
+			object.put("x", x);
+			object.put("y", y);
+			object.put("active", active);
+			object.put("visited", visited);
+
 		} catch (JSONException e) {
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
 			e.printStackTrace();
 		}
 
 		return object;
+	}
+
+	@Override
+	public void fromJSON(JSONObject json) {
+		id = json.optInt("id", id);
+		x = json.optDouble("x", x);
+		y = json.optDouble("y", y);
+		active = json.optBoolean("active", active);
+		visited = json.optBoolean("visited", visited);
 	}
 
 	/*
@@ -215,6 +225,17 @@ public class Colony extends ShapeDrawable {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Set this colony's ID
+	 * 
+	 * @param id
+	 *            the ID to set
+	 */
+	public void setId(int id) {
+		this.id = id;
+
 	}
 
 }

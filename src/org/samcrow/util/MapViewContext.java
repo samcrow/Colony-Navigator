@@ -1,8 +1,9 @@
 package org.samcrow.util;
 
 import org.samcrow.MapSurfaceView;
+import org.samcrow.stanford.R;
 
-import android.content.Context;
+import android.app.Activity;
 
 /**
  * A singleton class that stores a MapSurfaceView accessible across the
@@ -21,8 +22,8 @@ public final class MapViewContext {
 	 * @param context
 	 *            The context to create the view in
 	 */
-	public static void init(Context context) {
-		view = new MapSurfaceView(context);
+	public static void init(Activity context) {
+		view = (MapSurfaceView) context.findViewById(R.id.mapSurfaceView1);
 	}
 
 	/**
