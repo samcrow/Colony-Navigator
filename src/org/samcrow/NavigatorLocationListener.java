@@ -32,8 +32,12 @@ public class NavigatorLocationListener implements LocationListener {
 	 */
 	@Override
 	public void onLocationChanged(Location location) {
-		System.out.println("New location: " + location);
 		currentLocation = location;
+
+		ColonyNavigatorActivity.latitudeField.setText(String.valueOf(location
+				.getLatitude()));
+		ColonyNavigatorActivity.longitudeField.setText(String.valueOf(location
+				.getLongitude()));
 	}
 
 	/*

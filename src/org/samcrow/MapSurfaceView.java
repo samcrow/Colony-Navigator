@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.samcrow.data.Colony;
 import org.samcrow.data.HardCodedColonies;
+import org.samcrow.util.MapPoint;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -21,6 +22,16 @@ import android.view.View;
  * @author Sam Crow Handles drawing the map
  */
 public class MapSurfaceView extends View implements OnScaleGestureListener {
+
+	// Colony location reference points
+
+	public static final double colony415Latitude = 31.870901;
+	public static final double colony415Longitude = -109.044345;
+	public static final MapPoint colony415 = getColony415();
+
+	public static final double colony928Latitude = 31.873036;
+	public static final double colony928Longitude = -109.038751;
+	public static final MapPoint colony928 = getColony928();
 
 	/**
 	 * The current scale in the range (0, infinity), centered on 1, to display
@@ -67,6 +78,30 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 		initScale(context);
 	}
 
+	private static final MapPoint getColony415() {
+
+		for (Colony colony : HardCodedColonies.colonies) {
+			if (colony.getId() == 415) {
+				return new MapPoint(colony, colony415Latitude,
+						colony415Longitude);
+			}
+		}
+
+		return null;
+	}
+
+	private static final MapPoint getColony928() {
+
+		for (Colony colony : HardCodedColonies.colonies) {
+			if (colony.getId() == 928) {
+				return new MapPoint(colony, colony928Latitude,
+						colony928Longitude);
+			}
+		}
+
+		return null;
+	}
+
 	/**
 	 * @param context
 	 * @param attrs
@@ -101,16 +136,16 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	@Override
 	protected void onDraw(Canvas canvas) {
 
+		// Supposed to increase the resolution of the canvas when zoomed in.
+		// May not actually do anything.
+		canvas.setDensity(600);
+
 		canvas.translate(relativeX / 30f * scale, relativeY / 30f * scale);
 		canvas.scale(scale, scale, (canvas.getWidth()) / 2f,
 				(canvas.getHeight()) / 2f);
 
 		// Clear the screen
 		canvas.drawColor(Color.WHITE);
-
-		kAntiAliasPaint.setColor(Color.RED);
-		canvas.drawRect(getColonyMapBounds(), kAntiAliasPaint);
-		kAntiAliasPaint.setColor(Color.BLACK);
 
 		Set<Colony> colonies = HardCodedColonies.colonies;
 
@@ -121,11 +156,11 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 				for (Colony colony : colonies) {
 					kAntiAliasPaint.setColor(Color.BLACK);
 					canvas.drawCircle((float) colony.getX(),
-							(float) colony.getY(), 2, kAntiAliasPaint);
+							transformY(colony.getY()), 2, kAntiAliasPaint);
 
 					kAntiAliasPaint.setColor(Color.MAGENTA);
 					canvas.drawText(String.valueOf(colony.getId()),
-							(float) colony.getX(), (float) colony.getY(),
+							(float) colony.getX(), transformY(colony.getY()),
 							kAntiAliasPaint);
 				}
 			}
@@ -139,15 +174,18 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 		// Static map elements
 		kAntiAliasPaint.setColor(Color.BLUE);
 		kAntiAliasPaint.setStrokeWidth(10);
-		canvas.drawLine(-100, -25, 1500, 265, kAntiAliasPaint); // Portal
-																// Road /
-																// NM 533
+		canvas.drawLine(-100, transformY(-25), 1500, transformY(265),
+				kAntiAliasPaint); // Portal
+		// Road /
+		// NM 533
 		kAntiAliasPaint.setStrokeWidth(5);
-		canvas.drawLine(1350, 250, 1230, 1000, kAntiAliasPaint); // Wrangler
-																	// Road
+		canvas.drawLine(1350, transformY(250), 1230, transformY(1000),
+				kAntiAliasPaint); // Wrangler
+		// Road
 
 		kAntiAliasPaint.setColor(Color.BLACK);
-		canvas.drawLine(0, 5, -150, 900, kAntiAliasPaint);// West boundary
+		canvas.drawLine(0, transformY(5), -150, transformY(900),
+				kAntiAliasPaint);// West boundary
 	}
 
 	/**
@@ -156,11 +194,9 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	 * @param y
 	 * @return
 	 */
-	private double transformYCoordinate(double y) {
+	private float transformY(double y) {
 
-		// TODO
-
-		return y;
+		return colonyBounds.top - (float) y;
 	}
 
 	/**

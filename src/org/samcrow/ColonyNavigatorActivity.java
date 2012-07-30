@@ -7,10 +7,15 @@ import android.app.Activity;
 import android.location.Criteria;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.widget.TextView;
 
 public class ColonyNavigatorActivity extends Activity {
 
 	private MapSurfaceView mapView;
+
+	public static TextView longitudeField;
+
+	public static TextView latitudeField;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -19,6 +24,9 @@ public class ColonyNavigatorActivity extends Activity {
 
 		MapViewContext.init(this);
 		setContentView(R.layout.main);
+
+		latitudeField = (TextView) findViewById(R.id.latitudeField);
+		longitudeField = (TextView) findViewById(R.id.longitudeField);
 
 		Criteria gpsCriteria = new Criteria();
 		gpsCriteria.setAccuracy(Criteria.ACCURACY_FINE);
