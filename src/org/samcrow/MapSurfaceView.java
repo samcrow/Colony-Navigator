@@ -1,15 +1,19 @@
 package org.samcrow;
 
+import static org.samcrow.ColonyNavigatorActivity.provider;
+
 import java.util.Set;
 
 import org.samcrow.data.Colony;
-import org.samcrow.data.HardCodedColonies;
+import org.samcrow.util.CoordinateTransformer;
 import org.samcrow.util.MapPoint;
 
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.location.Location;
 import android.util.AttributeSet;
@@ -32,6 +36,23 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	public static final double colony928Latitude = 31.873036;
 	public static final double colony928Longitude = -109.038751;
 	public static final MapPoint colony928 = getColony928();
+
+	private CoordinateTransformer transform = new CoordinateTransformer(
+			colony415, colony928);
+
+	{
+		float averageLongitude = (float) ((colony415Longitude + colony928Longitude) / 2.0);
+		float averageLatitude = (float) ((colony415Latitude + colony928Latitude) / 2.0);
+
+		PointF center = transform.toLocal(averageLongitude, averageLatitude);
+
+		System.out.println("Colony 415 (" + colony415.getX() + ", "
+				+ colony415.getY() + ")");
+		System.out.println("Colony 928 (" + colony928.getX() + ", "
+				+ colony928.getY() + ")");
+		System.out.println("Lat/lon center to local (" + center.x + ", "
+				+ center.y + ")");
+	}
 
 	/**
 	 * The current scale in the range (0, infinity), centered on 1, to display
@@ -57,6 +78,20 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	 */
 	private float relativeY = 0;
 
+	private Rect colonyBounds = getColonyMapBounds();
+
+	/**
+	 * Transformation matrix used to transform points from colony coordinates to screen coordinates
+	 */
+	private Matrix displayTransform = new Matrix();
+
+	/**
+	 * A reference to the colony that's currently selected
+	 */
+	private Colony selectedColony;
+
+	private static final int colonyLabelColor = Color.rgb(200, 0, 200);
+
 	/**
 	 * A paint object that enables antialiasing
 	 */
@@ -65,10 +100,7 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 		kAntiAliasPaint.setAntiAlias(true);
 	}
 
-	/**
-	 * The boundaries of the colonies
-	 */
-	private Rect colonyBounds = getColonyMapBounds();
+	/* Static import colonies from ColonyNavigatoActivity */
 
 	/**
 	 * @param context
@@ -76,30 +108,6 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	public MapSurfaceView(Context context) {
 		super(context);
 		initScale(context);
-	}
-
-	private static final MapPoint getColony415() {
-
-		for (Colony colony : HardCodedColonies.colonies) {
-			if (colony.getId() == 415) {
-				return new MapPoint(colony, colony415Latitude,
-						colony415Longitude);
-			}
-		}
-
-		return null;
-	}
-
-	private static final MapPoint getColony928() {
-
-		for (Colony colony : HardCodedColonies.colonies) {
-			if (colony.getId() == 928) {
-				return new MapPoint(colony, colony928Latitude,
-						colony928Longitude);
-			}
-		}
-
-		return null;
 	}
 
 	/**
@@ -136,67 +144,91 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	@Override
 	protected void onDraw(Canvas canvas) {
 
-		// Supposed to increase the resolution of the canvas when zoomed in.
-		// May not actually do anything.
-		canvas.setDensity(600);
-
-		canvas.translate(relativeX / 30f * scale, relativeY / 30f * scale);
-		canvas.scale(scale, scale, (canvas.getWidth()) / 2f,
-				(canvas.getHeight()) / 2f);
+		displayTransform.reset();
+		//Rotate to convert to true north
+		displayTransform.postRotate(-10);
+		//Fix to make the map appear in the center initially
+		displayTransform.postTranslate(0, colonyBounds.height());
+		displayTransform.postScale(scale, -scale);
+		displayTransform.postTranslate(relativeX, relativeY);
 
 		// Clear the screen
 		canvas.drawColor(Color.WHITE);
 
-		Set<Colony> colonies = HardCodedColonies.colonies;
+		Set<Colony> colonies = provider.getColonies();
 
 		Location location = NavigatorLocationListener.getLocation();
 		if (colonies != null) {
 
 			synchronized (colonies) {
 				for (Colony colony : colonies) {
-					kAntiAliasPaint.setColor(Color.BLACK);
-					canvas.drawCircle((float) colony.getX(),
-							transformY(colony.getY()), 2, kAntiAliasPaint);
 
-					kAntiAliasPaint.setColor(Color.MAGENTA);
-					canvas.drawText(String.valueOf(colony.getId()),
-							(float) colony.getX(), transformY(colony.getY()),
-							kAntiAliasPaint);
+					float[] points = new float[] {
+							(float) colony.getX(),
+							(float) colony.getY()
+					};
+
+					displayTransform.mapPoints(points);
+
+					if(inWindow(points)) {
+
+						if(colony == selectedColony) {
+							//Draw the colony in red with a larger circle
+							kAntiAliasPaint.setColor(Color.RED);
+							canvas.drawCircle(points[0],
+									points[1], 4, kAntiAliasPaint);
+						}
+						else {//Not selected, draw it as usual
+							kAntiAliasPaint.setColor(Color.BLACK);
+							canvas.drawCircle(points[0],
+									points[1], 2, kAntiAliasPaint);
+						}
+
+						kAntiAliasPaint.setColor(colonyLabelColor);
+						kAntiAliasPaint.setTextSize(10 * scale);
+						canvas.drawText(String.valueOf(colony.getId()),
+								points[0], points[1],
+								kAntiAliasPaint);
+					}
 				}
 			}
 		}
 		if (location != null) {
-			canvas.drawText("Latitude " + location.getLatitude()
-					+ " Longitude " + location.getLongitude(), 0, 100,
-					kAntiAliasPaint);
+			//Get the location in colony coordinates
+			PointF pointColonyCoords = transform.toLocal(location.getLongitude(), location.getLatitude());
+
+			float[] point = new float[] { pointColonyCoords.x, pointColonyCoords.y };
+
+			displayTransform.mapPoints(point);
+
+			if(inWindow(point)) {
+				//Draw a circle at the user's current location
+				canvas.drawCircle(point[0], point[1], 5 * scale, kAntiAliasPaint);
+			}
 		}
 
 		// Static map elements
 		kAntiAliasPaint.setColor(Color.BLUE);
 		kAntiAliasPaint.setStrokeWidth(10);
-		canvas.drawLine(-100, transformY(-25), 1500, transformY(265),
-				kAntiAliasPaint); // Portal
-		// Road /
-		// NM 533
+
+		//Portal road
+		float[] portalRoadA = new float[] { -100, -25 };
+		float[] portalRoadB = new float[] { 1500, 265 };
+		displayTransform.mapPoints(portalRoadA);
+		displayTransform.mapPoints(portalRoadB);
+		canvas.drawLine(portalRoadA[0], portalRoadA[1], portalRoadB[0], portalRoadB[1],
+				kAntiAliasPaint);
+
 		kAntiAliasPaint.setStrokeWidth(5);
-		canvas.drawLine(1350, transformY(250), 1230, transformY(1000),
-				kAntiAliasPaint); // Wrangler
-		// Road
 
-		kAntiAliasPaint.setColor(Color.BLACK);
-		canvas.drawLine(0, transformY(5), -150, transformY(900),
-				kAntiAliasPaint);// West boundary
-	}
-
-	/**
-	 * Transform a Y coordinate to vertically flip everything
-	 * 
-	 * @param y
-	 * @return
-	 */
-	private float transformY(double y) {
-
-		return colonyBounds.top - (float) y;
+		//
+		//		canvas.drawLine(1350, transformY(250), 1230, transformY(1000),
+		//				kAntiAliasPaint); // Wrangler
+		//		// Road
+		//
+		//		kAntiAliasPaint.setColor(Color.BLACK);
+		//		canvas.drawLine(0, transformY(5), -150, transformY(900),
+		//				kAntiAliasPaint);// West boundary
 	}
 
 	/**
@@ -207,7 +239,7 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	 * @return the rectangle.
 	 */
 	private Rect getColonyMapBounds() {
-		Set<Colony> colonies = HardCodedColonies.colonies;
+		Set<Colony> colonies = provider.getColonies();
 
 		if (colonies == null) {
 			// No valid colonies: Return a rect with everything zero.
@@ -246,6 +278,35 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 		}
 	}
 
+	/**
+	 * Check if a given set of points, in local window coordinates, are inside the window
+	 * @param points An array with 0 => x and 1 -> y
+	 * @return True if the point is in the window, otherwise false
+	 */
+	private boolean inWindow(float[] points) {
+		return points[0] <= getWidth() && points[1] <= getHeight();
+	}
+
+	/**
+	 * Get the selected colony
+	 * @return the selected colony
+	 */
+	public synchronized Colony getSelectedColony() {
+		return selectedColony;
+	}
+
+	/**
+	 * Set the selected colony
+	 * @param selectedColony the colony to set
+	 */
+	public synchronized void setSelectedColony(Colony selectedColony) {
+		boolean changed = selectedColony != this.selectedColony;
+		this.selectedColony = selectedColony;
+		if(changed) {
+			invalidate();
+		}
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -259,18 +320,38 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 			dragStartY = event.getY();
 		} else if (event.getActionMasked() == MotionEvent.ACTION_UP
 				|| event.getActionMasked() == MotionEvent.ACTION_MOVE) {
-			relativeX += event.getX() - dragStartX;
-			relativeY += event.getY() - dragStartY;
 
-			postInvalidate();
+			float deltaX = (event.getX() - dragStartX) / (scale * 25);
+			float deltaY = (event.getY() - dragStartY) / (scale * 25);
+
+			relativeX += deltaX;
+			relativeY += deltaY;
+
+			System.out.println("Offsets ("+relativeX+", "+relativeY+")");
+
+			invalidate();
 		}
 		return true;
 	}
 
 	@Override
 	public boolean onScale(ScaleGestureDetector detector) {
+		//		float scaleFactor = detector.getScaleFactor();
+		//		if(scaleFactor > 1) {
 		scale *= detector.getScaleFactor();
-		postInvalidate();
+		invalidate();
+		//		}
+		//		else {
+		//			//Trying to scale down (zoom out)
+		//			//Don't allow it if the colony bounds are within and smaller than the window
+		//			if(!new Rect(0, 0, getWidth(), getHeight()).contains(colonyBounds)) {
+		//				scale *= detector.getScaleFactor();
+		//				invalidate();
+		//			}
+		//			else {
+		//				System.out.println("Trying zoom out too much. Preventing that.");
+		//			}
+		//		}
 		return true;
 	}
 
@@ -281,5 +362,44 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 	@Override
 	public void onScaleEnd(ScaleGestureDetector detector) {
+	}
+
+	private static final MapPoint getColony415() {
+
+		for (Colony colony :  provider.getColonies()) {
+			if (colony.getId() == 415) {
+				return new MapPoint(colony, colony415Latitude,
+						colony415Longitude);
+			}
+		}
+
+		return null;
+	}
+
+	private static final MapPoint getColony928() {
+
+		for (Colony colony :  provider.getColonies()) {
+			if (colony.getId() == 928) {
+				return new MapPoint(colony, colony928Latitude,
+						colony928Longitude);
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Set the view to be centered on a colony
+	 * @param colony The colony to center the view on
+	 */
+	public void centerViewOn(Colony colony) {
+		float[] point = new float[] { (float) colony.getX(), (float) colony.getY() };
+
+		//Get the in-view coordinates of the colony
+		displayTransform.mapPoints(point);
+
+		relativeX = (float) -(point[0] + (getWidth() / 2.0));
+
+		invalidate();
 	}
 }

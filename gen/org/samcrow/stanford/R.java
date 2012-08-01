@@ -15,13 +15,13 @@ public final class R {
     }
     public static final class id {
         public static final int activeCheckBox=0x7f050002;
-        public static final int button1=0x7f05000b;
         public static final int cancelButton=0x7f050003;
+        public static final int colonyField=0x7f05000a;
         public static final int colonyNumberText=0x7f050000;
-        public static final int editText1=0x7f05000a;
+        public static final int colonyOkButton=0x7f05000b;
         public static final int latitudeField=0x7f050006;
         public static final int longitudeField=0x7f050008;
-        public static final int mapSurfaceView1=0x7f05000c;
+        public static final int mapView=0x7f05000c;
         public static final int okButton=0x7f050004;
         public static final int textView1=0x7f050009;
         public static final int textView2=0x7f050005;

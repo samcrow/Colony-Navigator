@@ -14,7 +14,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.samcrow.data.Colony;
 import org.samcrow.data.JSONSerializable;
-import org.samcrow.data.ProtocolParser;
 
 import android.app.Activity;
 import android.os.Environment;
@@ -225,11 +224,10 @@ public class ServerConnection extends ColonyChangeCallbackManager {
 
 				String line = waitForLine();
 
-				// Now 'line' represents the response
-				colonies = ProtocolParser.stringToColonies(line);
+				//TODO: parse
 
 				fireCallback();// Notify other objects that the set of colonies
-								// has changed
+				// has changed
 			}
 		}
 	}
@@ -266,8 +264,8 @@ public class ServerConnection extends ColonyChangeCallbackManager {
 			// Don't let any other thread modify anything about the
 			// ServerConnection while this one is working on it
 			synchronized (ServerConnection.this) {
-				output.println("update-colony"
-						+ ProtocolParser.colonyToString(colonyToUpdate));
+				//TODO: create response
+
 				waitForLine();
 				// should return "success".
 
@@ -305,8 +303,8 @@ public class ServerConnection extends ColonyChangeCallbackManager {
 		protected String waitForLine() {
 
 			if (input == null) {// Some other thread may not have initialized
-								// the
-								// input stream.
+				// the
+				// input stream.
 				return "";
 			}
 

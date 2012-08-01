@@ -1,5 +1,8 @@
 package org.samcrow.util;
 
+import android.graphics.Matrix;
+import android.graphics.PointF;
+
 /**
  * Transforms coordinates from GPS latitude/longitude into local colony
  * coordinates. <br />
@@ -14,27 +17,7 @@ package org.samcrow.util;
  */
 public class CoordinateTransformer {
 
-	/**
-	 * X offset: GPS longitude + offsetX = local X location
-	 */
-	private double offsetX;
-
-	/**
-	 * Y offset: GPS latitude + offsetY = local Y location
-	 */
-	private double offsetY;
-
-	/**
-	 * Rotation offset: Local coordinates rotated this many radians
-	 * counter-clockwise from above = local coordinates for the next step
-	 */
-	private double rotation;
-
-	/**
-	 * Scale ratio: Local coordinates scaled by this much = final local
-	 * coordinates
-	 */
-	private double scale;
+	private Matrix matrix;
 
 	/**
 	 * Constructor that uses the local position and latitude/longitude of 2
@@ -48,86 +31,67 @@ public class CoordinateTransformer {
 	 */
 	public CoordinateTransformer(MapPoint point1, MapPoint point2) {
 
-		offsetX = point1.getX() - point1.getLongitude();
+		matrix = new Matrix();
 
-		offsetY = point1.getY() - point1.getLatitude();
+		float[] sourcePoints = new float[] { (float) point1.getLongitude(), // x0
+				(float) point1.getLatitude(), // y0
+				(float) point2.getLongitude(), // x1
+				(float) point2.getLatitude() // y1
+		};
 
-		// Calculate the angles between the points in lat/lon and local
-		// coordinates
-		{
-			double gpsXDelta = point2.getLongitude() - point1.getLongitude();
-			double gpsYDelta = point2.getLatitude() - point1.getLatitude();
-			/*
-			 * 
-			 * XDelta _______ | / | / YDelta | / | / | / angle |/________
-			 */
+		float[] destPoints = new float[] { (float) point1.getX(),
+				(float) point1.getY(), (float) point2.getX(),
+				(float) point2.getY() };
 
-			double gpsAngle = Math.atan2(gpsYDelta, gpsXDelta); // (y, x)
+		matrix.setPolyToPoly(sourcePoints, 0, destPoints, 0, 2);
 
-			double localXDelta = point2.getX() - point1.getX();
-			double localYDelta = point2.getY() - point1.getY();
-
-			double localAngle = Math.atan2(localYDelta, localXDelta);
-
-			rotation = localAngle - gpsAngle;
-
-			// Calculate the scale using the diagonal distance between the
-			// points
-			double gpsDistance = Math.sqrt(square(gpsXDelta)
-					+ square(gpsYDelta));
-
-			double localDistance = Math.sqrt(square(localXDelta)
-					+ square(localYDelta));
-
-			scale = localDistance / gpsDistance;
-
-		}
-
+		System.out.println(matrix);
 	}
 
 	/**
-	 * Transform given GPS coordinates into local coordinates. The parameters
-	 * are given as Double objects, so this function will modify them without
-	 * returning anything.
+	 * Transform given GPS coordinates into local coordinates.
 	 * 
 	 * @param longitude
 	 *            The longitude (X-axis location)
 	 * @param latitude
 	 *            The latitude (Y-axis location);
+	 * @return A point with the transformed coordinates
 	 */
-	public void transform(Double longitude, Double latitude) {
+	public PointF toLocal(double longitude, double latitude) {
 		// Explicitly extract the primitive values from the objects
-		double x = longitude.doubleValue();
-		double y = latitude.doubleValue();
+		double x = longitude;
+		double y = latitude;
+		float[] points = new float[] { (float) x, (float) y };
 
-		x += offsetX;
-		y += offsetY;
+		matrix.mapPoints(points);
 
-		// To manipulate the rotation, get the actual angle (counterclockwise
-		// from above from facing east) of the vector from the origin to these
-		// coordinates
-		double angle = Math.atan2(y, x);
-		// And also the distance of the vector
-
-		double distance = Math.sqrt(square(x) + square(y));
-		// Scale that vector distance
-		distance *= scale;
-
-		angle += rotation;
-
-		// Calcualte new X and Y values with the modified rotation
-		x = Math.cos(angle) * distance;
-		y = Math.sin(angle) * distance;
+		return new PointF(points[0], points[1]);
 	}
 
 	/**
-	 * Calculate the square of a numerical value
+	 * Transform the given local coordinates into GPS coordinates
 	 * 
-	 * @param value
-	 *            The value to square
-	 * @return The squared value
+	 * @param x
+	 *            The X location
+	 * @param y
+	 *            The y location
+	 * @return A point with the longitude mapped to x and the latitude mapped to
+	 *         y
 	 */
-	private static double square(double value) {
-		return value * value;
+	public PointF toGps(float x, float y) {
+
+		Matrix inverse = new Matrix();
+		boolean success = matrix.invert(inverse);// Make inverse the inverse matrix of the main matrix
+
+		if (!success) {
+			throw new RuntimeException("Matrix could not be inverted");
+		}
+
+		float[] points = new float[] { x, y };
+
+		inverse.mapPoints(points);
+
+		return new PointF(points[0], points[1]);
+
 	}
 }
