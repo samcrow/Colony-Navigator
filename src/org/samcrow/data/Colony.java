@@ -3,14 +3,12 @@ package org.samcrow.data;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.graphics.drawable.ShapeDrawable;
-
 /**
  * Stores data for one colony
  * 
  * @author Sam Crow
  */
-public class Colony extends ShapeDrawable implements JSONSerializable {
+public class Colony implements JSONSerializable {
 
 	/**
 	 * Constructor
@@ -173,7 +171,7 @@ public class Colony extends ShapeDrawable implements JSONSerializable {
 	@Override
 	public String toString() {
 		return "Colony #" + id + " at (" + x + ", " + y + "), "
-				+ (active ? "active" : "inactive");
+				+ (active ? "active" : "inactive")+", "+(visited ? "visited" : "not visited");
 	}
 
 	/*

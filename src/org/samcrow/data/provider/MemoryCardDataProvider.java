@@ -9,8 +9,6 @@ import org.samcrow.data.io.CSVFileParser;
 import org.samcrow.data.io.FileParser;
 import org.samcrow.data.io.JSONFileParser;
 
-import android.widget.Toast;
-
 /**
  * Provides colonies from data stored on the memory card.
  * This class first looks for a CSV file named colonies.csv in the directory specified by {@link #kDir}.
@@ -97,7 +95,6 @@ public class MemoryCardDataProvider implements ColonyProvider {
 		else {
 			String message = "Neither "+csvFile.getAbsolutePath()+" or "+jsonFile.getAbsolutePath()+" exists! Failed to get colonies from the memory card.";
 			System.err.println(message);
-			Toast.makeText(null, message, Toast.LENGTH_LONG).show();
 		}
 	}
 

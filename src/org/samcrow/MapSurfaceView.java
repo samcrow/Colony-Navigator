@@ -89,7 +89,7 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	/**
 	 * A reference to the colony that's currently selected
 	 */
-	private Colony selectedColony;
+	public static Colony selectedColony;
 
 	private static final int colonyLabelColor = Color.rgb(200, 0, 200);
 
