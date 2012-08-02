@@ -13,6 +13,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.location.Location;
@@ -150,6 +151,13 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 		//Fix to make the map appear in the center initially
 		displayTransform.postTranslate(0, colonyBounds.height());
 		displayTransform.postScale(scale, -scale);
+
+		/*
+		 * When relativeX and relativeY are zero, the origin is centered
+		 * on the bottom left corner of the screen ((0, getHeight()) ins screen coordinates)
+		 * Map shifts left (viewport right), relativeX goes to negative infinity
+		 * Map shifts down (viewport up), relativeY goes to positive infinity
+		 */
 		displayTransform.postTranslate(relativeX, relativeY);
 
 		// Clear the screen
@@ -177,6 +185,43 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 							kAntiAliasPaint.setColor(Color.RED);
 							canvas.drawCircle(points[0],
 									points[1], 4, kAntiAliasPaint);
+
+							//Draw some extra accoutrements around it
+
+							//Pixels offset from the center of the circle to the tip of the triangle
+							final short triOffset = 8;
+							//Width of the triangle
+							final short triWidth = 10;
+							//Length of the triangle
+							final short triLength = 20;
+
+							//Top triangle
+							Path triangle = new Path();
+							triangle.moveTo(points[0], points[1] - triOffset * scale);
+							triangle.lineTo((float) (points[0] + (triWidth / 2.0) * scale), points[1] - (triOffset + triLength) * scale);
+							triangle.lineTo((float) (points[0] - (triWidth / 2.0) * scale), points[1] - (triOffset + triLength) * scale);
+							triangle.close();
+
+							canvas.drawPath(triangle, kAntiAliasPaint);
+
+							//Bottom triangle
+							triangle = new Path();
+							triangle.moveTo(points[0], points[1] + triOffset * scale);
+							triangle.lineTo((float) (points[0] + (triWidth / 2.0) * scale), points[1] + (triOffset + triLength) * scale);
+							triangle.lineTo((float) (points[0] - (triWidth / 2.0) * scale), points[1] + (triOffset + triLength) * scale);
+							triangle.close();
+
+							canvas.drawPath(triangle, kAntiAliasPaint);
+
+							//Left triangle
+							triangle = new Path();
+							triangle.moveTo(points[0] - triOffset * scale, points[1]);
+							triangle.lineTo(points[0] - (triOffset + triLength) * scale, (float) (points[1] + (triWidth / 2.0) * scale));
+							triangle.lineTo(points[0] - (triOffset + triLength) * scale, (float) (points[1] - (triWidth / 2.0) * scale));
+							triangle.close();
+
+							canvas.drawPath(triangle, kAntiAliasPaint);
+
 						}
 						else {//Not selected, draw it as usual
 							kAntiAliasPaint.setColor(Color.BLACK);
@@ -187,7 +232,7 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 						kAntiAliasPaint.setColor(colonyLabelColor);
 						kAntiAliasPaint.setTextSize(10 * scale);
 						canvas.drawText(String.valueOf(colony.getId()),
-								points[0], points[1],
+								points[0] + 2 * scale, points[1] + 3 * scale,
 								kAntiAliasPaint);
 					}
 				}
@@ -197,13 +242,27 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 			//Get the location in colony coordinates
 			PointF pointColonyCoords = transform.toLocal(location.getLongitude(), location.getLatitude());
 
-			float[] point = new float[] { pointColonyCoords.x, pointColonyCoords.y };
+			float[] locationPoint = new float[] { pointColonyCoords.x, pointColonyCoords.y };
 
-			displayTransform.mapPoints(point);
+			displayTransform.mapPoints(locationPoint);
 
-			if(inWindow(point)) {
+			if(inWindow(locationPoint)) {
 				//Draw a circle at the user's current location
-				canvas.drawCircle(point[0], point[1], 5 * scale, kAntiAliasPaint);
+				canvas.drawCircle(locationPoint[0], locationPoint[1], 5 * scale, kAntiAliasPaint);
+			}
+
+			if(selectedColony != null) {
+				//Have location and selected colony
+				//Draw a line between them
+				int oldColor = kAntiAliasPaint.getColor();
+				kAntiAliasPaint.setColor(Color.GREEN);
+				kAntiAliasPaint.setColor(oldColor);
+
+				float[] selectedPoint = new float[] { (float) selectedColony.getX(), (float) selectedColony.getY() };
+				displayTransform.mapPoints(selectedPoint);
+
+				canvas.drawLine(locationPoint[0], locationPoint[1], selectedPoint[0], selectedPoint[1], kAntiAliasPaint);
+
 			}
 		}
 
@@ -284,7 +343,7 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	 * @return True if the point is in the window, otherwise false
 	 */
 	private boolean inWindow(float[] points) {
-		return points[0] <= getWidth() && points[1] <= getHeight();
+		return points[0] >= 0 && points[0] <= getWidth() && points[1] >= 0 && points[1] <= getHeight();
 	}
 
 	/**
@@ -326,8 +385,6 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 			relativeX += deltaX;
 			relativeY += deltaY;
-
-			System.out.println("Offsets ("+relativeX+", "+relativeY+")");
 
 			invalidate();
 		}
@@ -397,8 +454,12 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 		//Get the in-view coordinates of the colony
 		displayTransform.mapPoints(point);
+		//point is now the location of the selected colony on the screen in pixels from the top left corner
 
-		relativeX = (float) -(point[0] + (getWidth() / 2.0));
+
+		relativeX = (float) (getWidth() / 2.0) - point[0];
+
+		relativeY = -(point[1] - (getWidth() / 2f));
 
 		invalidate();
 	}

@@ -2,7 +2,7 @@ package org.samcrow;
 
 import org.samcrow.data.Colony;
 import org.samcrow.data.provider.ColonyProvider;
-import org.samcrow.data.provider.HardCodedColonyProvider;
+import org.samcrow.data.provider.MemoryCardDataProvider;
 import org.samcrow.stanford.R;
 
 import android.app.Activity;
@@ -23,7 +23,7 @@ import android.widget.Toast;
 
 public class ColonyNavigatorActivity extends Activity {
 
-	public static final ColonyProvider provider = HardCodedColonyProvider.instance;
+	public static final ColonyProvider provider = new MemoryCardDataProvider();
 
 	private MapSurfaceView mapView;
 

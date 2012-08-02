@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -82,7 +84,12 @@ public class JSONFileParser extends JSONParser implements FileParser<Colony> {
 
 	@Override
 	public void write(Set<Colony> values) {
-		file.delete();
+
+		boolean deleteResult = file.delete();
+		if(!deleteResult) {
+			System.err.println("Could not delete file!");
+		}
+
 		try {
 			file.createNewFile();
 		} catch (IOException e) {
@@ -99,6 +106,8 @@ public class JSONFileParser extends JSONParser implements FileParser<Colony> {
 
 		try {
 			jsonRoot.put("colonies", colonyArray);
+			//Add a comment with some information for humans
+			jsonRoot.put("comment", "Serialized into JSON by "+toString()+" at "+DateFormat.getDateTimeInstance().format(new Date())+".");
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
