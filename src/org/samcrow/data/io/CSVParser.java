@@ -13,8 +13,9 @@ public class CSVParser implements Parser<Colony> {
 	 */
 	protected static final char separator = ',';
 
-	/* (non-Javadoc)
-	 * @see org.samcrow.data.io.Parser#parseOne(java.lang.String)
+	/**
+	 * Parse a line of CSV into a colony object.
+	 * The line must contain the fields id, x, y
 	 */
 	@Override
 	public Colony parseOne(String line) {
@@ -22,16 +23,17 @@ public class CSVParser implements Parser<Colony> {
 		//Split the line into parts separated by commas
 		String[] parts = line.split("\\s*,\\s*");
 		try {
-			assert parts.length >= 4;//Require 3 parts: number, X, Y, active
+			assert parts.length >= 3;//Require 3 parts: number, X, Y
 
 			int colonyNumber = Integer.valueOf(parts[0]);
 			int x = Integer.valueOf(parts[1]);
 			int y = Integer.valueOf(parts[2]);
 
-			//Active if part 3 is A (case insensitive), otherwise false
-			boolean active = parts[3].compareToIgnoreCase("A") == 0;
+			//Ignore active, assume each colony is inactive for the census
+			//			//Active if part 3 is A (case insensitive), otherwise false
+			//			boolean active = parts[3].compareToIgnoreCase("A") == 0;
 
-			return new Colony(colonyNumber, x, y, active);
+			return new Colony(colonyNumber, x, y, false);
 		} catch(Throwable e) {
 			//If anything went wrong, return null
 			return null;

@@ -1,5 +1,9 @@
 package org.samcrow.data;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Date;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -46,6 +50,15 @@ public class Colony implements JSONSerializable {
 	protected volatile boolean visited;
 
 	/**
+	 * The date/time that this colony was modified.
+	 * If it was not modified by Colony Navigator since
+	 * it was imported from the CSV file, this should be null.
+	 * Otherwise, it should be the date when the user last
+	 * modified the data using the Colony Navigator application.
+	 */
+	protected Date modified = null;
+
+	/**
 	 * Get the colony's X-coordinate in meters east of the southwest corner
 	 * 
 	 * @return the colony's X-coordinate in meters east of the southwest corner
@@ -62,6 +75,7 @@ public class Colony implements JSONSerializable {
 	 */
 	public synchronized void setX(double x) {
 		this.x = x;
+		updateModifiedDate();
 	}
 
 	/**
@@ -81,6 +95,7 @@ public class Colony implements JSONSerializable {
 	 */
 	public synchronized void setY(double y) {
 		this.y = y;
+		updateModifiedDate();
 	}
 
 	/**
@@ -100,6 +115,7 @@ public class Colony implements JSONSerializable {
 	 */
 	public synchronized void setActive(boolean active) {
 		this.active = active;
+		updateModifiedDate();
 	}
 
 	/**
@@ -119,6 +135,7 @@ public class Colony implements JSONSerializable {
 	 */
 	public synchronized void setVisited(boolean visited) {
 		this.visited = visited;
+		updateModifiedDate();
 	}
 
 	/**
@@ -128,6 +145,14 @@ public class Colony implements JSONSerializable {
 	 */
 	public synchronized int getId() {
 		return id;
+	}
+
+	/**
+	 * Update the modified date/time and set it to now.
+	 * Every method that sets a field should call this method.
+	 */
+	protected final void updateModifiedDate() {
+		modified = new Date();
 	}
 
 	/*
@@ -147,6 +172,15 @@ public class Colony implements JSONSerializable {
 			object.put("active", active);
 			object.put("visited", visited);
 
+			//Visited date/time: Should be JSON's NULL if null, or formatted
+			//using DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL)
+
+			if(modified == null) {
+				object.put("modified", JSONObject.NULL);
+			} else {
+				object.put("modified", DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(modified));
+			}
+
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -161,6 +195,19 @@ public class Colony implements JSONSerializable {
 		y = json.optDouble("y", y);
 		active = json.optBoolean("active", active);
 		visited = json.optBoolean("visited", visited);
+
+		Object modifiedObject = json.opt("modified");
+		if(modifiedObject == null || JSONObject.NULL.equals(modifiedObject)) {
+			//Modified time specified as null; make it so
+			modified = null;
+		} else if(modifiedObject instanceof String) {
+			try {
+				//Modified time given; parse it
+				modified = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).parse((String) modifiedObject);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	/*
