@@ -1,10 +1,9 @@
 package org.samcrow.data.provider;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.samcrow.data.Colony;
+import org.samcrow.data.ColonySet;
 import org.samcrow.data.io.CSVFileParser;
 import org.samcrow.data.io.FileParser;
 import org.samcrow.data.io.JSONFileParser;
@@ -22,7 +21,7 @@ import org.samcrow.data.io.JSONFileParser;
  */
 public class MemoryCardDataProvider implements ColonyProvider {
 
-	private Set<Colony> colonies = new HashSet<Colony>();
+	private ColonySet colonies = new ColonySet();
 
 	/**
 	 * The absolute path to the folder where data should be read and written.
@@ -60,7 +59,7 @@ public class MemoryCardDataProvider implements ColonyProvider {
 
 			//Read the CSV and get the colonies into memory
 			FileParser<Colony> csvParser = new CSVFileParser(csvFile);
-			colonies = csvParser.parse();
+			colonies = new ColonySet(csvParser.parse());
 
 			//Write the JSON file from memory
 			FileParser<Colony> jsonParser = new JSONFileParser(jsonFile);
@@ -72,11 +71,11 @@ public class MemoryCardDataProvider implements ColonyProvider {
 
 
 			FileParser<Colony> csvParser = new CSVFileParser(csvFile);
-			Set<Colony> csvColonies = csvParser.parse();
+			ColonySet csvColonies = new ColonySet(csvParser.parse());
 
 			//Write the JSON file from memory
 			FileParser<Colony> jsonParser = new JSONFileParser(jsonFile);
-			Set<Colony> jsonColonies = jsonParser.parse();
+			ColonySet jsonColonies = new ColonySet(jsonParser.parse());
 
 			//Put into memory the colonies from the CSV updated with colonies from the JSON file
 			colonies = extend(csvColonies, jsonColonies);
@@ -89,7 +88,8 @@ public class MemoryCardDataProvider implements ColonyProvider {
 		else if(!csvFile.exists() && jsonFile.exists()) {
 			//Use the JSON file
 			FileParser<Colony> jsonParser = new JSONFileParser(jsonFile);
-			colonies = jsonParser.parse();
+			colonies.clear();
+			colonies.addAll(jsonParser.parse());
 		}
 
 		else {
@@ -103,7 +103,7 @@ public class MemoryCardDataProvider implements ColonyProvider {
 	 * @see org.samcrow.data.provider.ColonyProvider#getColonies()
 	 */
 	@Override
-	public Set<Colony> getColonies() {
+	public ColonySet getColonies() {
 		return colonies;
 	}
 
@@ -145,15 +145,15 @@ public class MemoryCardDataProvider implements ColonyProvider {
 	 * This set will contain references to the same colony objects referred to by
 	 * the input sets.
 	 */
-	private Set<Colony> extend(Set<Colony> base, Set<Colony> supplement) {
+	private ColonySet extend(ColonySet base, ColonySet supplement) {
 		//Note: base and supplement contain references to different colony objects with the same IDs
 
-		Set<Colony> finalSet = new HashSet<Colony>();
+		ColonySet finalSet = new ColonySet();
 
 		for(Colony colony : base) {
 			int id = colony.getId();
 
-			Colony supplementColony = findColonyById(supplement, id);
+			Colony supplementColony = supplement.getById(id);
 			if(supplementColony != null) {
 				//It's in the supplement set, so just use the version from the supplement
 				finalSet.add(supplementColony);
@@ -167,7 +167,7 @@ public class MemoryCardDataProvider implements ColonyProvider {
 		for(Colony supplementColony : supplement) {
 			int id = supplementColony.getId();
 
-			Colony baseColony = findColonyById(base, id);
+			Colony baseColony = base.getById(id);
 			if(baseColony == null) {
 				//If this colony is in the base set, it's already been added.
 				//Here, it isn't in the base set, so it's added to the final set.
@@ -176,22 +176,6 @@ public class MemoryCardDataProvider implements ColonyProvider {
 		}
 
 		return finalSet;
-	}
-
-	/**
-	 * Find a colony with given ID in a given set
-	 * @param set The set of colonies to search
-	 * @param id The colony ID to search for
-	 * @return A reference to the colony in the set with the given
-	 * ID, or null if no such colony was found
-	 */
-	private Colony findColonyById(Set<Colony> set, int id) {
-		for(Colony colony : set) {
-			if(colony.getId() == id) {
-				return colony;
-			}
-		}
-		return null;
 	}
 
 	/**

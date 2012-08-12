@@ -1,9 +1,9 @@
 package org.samcrow.data;
 
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
 
+import org.apache.ISO8601DateParser;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -50,11 +50,10 @@ public class Colony implements JSONSerializable {
 	protected volatile boolean visited;
 
 	/**
-	 * The date/time that this colony was modified.
-	 * If it was not modified by Colony Navigator since
-	 * it was imported from the CSV file, this should be null.
-	 * Otherwise, it should be the date when the user last
-	 * modified the data using the Colony Navigator application.
+	 * The date/time that this colony was modified. If it was not modified by
+	 * Colony Navigator since it was imported from the CSV file, this should be
+	 * null. Otherwise, it should be the date when the user last modified the
+	 * data using the Colony Navigator application.
 	 */
 	protected Date modified = null;
 
@@ -148,8 +147,8 @@ public class Colony implements JSONSerializable {
 	}
 
 	/**
-	 * Update the modified date/time and set it to now.
-	 * Every method that sets a field should call this method.
+	 * Update the modified date/time and set it to now. Every method that sets a
+	 * field should call this method.
 	 */
 	protected final void updateModifiedDate() {
 		modified = new Date();
@@ -172,13 +171,15 @@ public class Colony implements JSONSerializable {
 			object.put("active", active);
 			object.put("visited", visited);
 
-			//Visited date/time: Should be JSON's NULL if null, or formatted
-			//using DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL)
+			// Visited date/time: Should be JSON's NULL if null, or formatted
+			// using DateFormat.getDateTimeInstance(DateFormat.FULL,
+			// DateFormat.FULL)
 
-			if(modified == null) {
+			if (modified == null) {
 				object.put("modified", JSONObject.NULL);
-			} else {
-				object.put("modified", DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(modified));
+			}
+			else {
+				object.put("modified", ISO8601DateParser.toString(modified));
 			}
 
 		} catch (JSONException e) {
@@ -197,15 +198,17 @@ public class Colony implements JSONSerializable {
 		visited = json.optBoolean("visited", visited);
 
 		Object modifiedObject = json.opt("modified");
-		if(modifiedObject == null || JSONObject.NULL.equals(modifiedObject)) {
-			//Modified time specified as null; make it so
+		if (modifiedObject == null || JSONObject.NULL.equals(modifiedObject)) {
+			// Modified time specified as null; make it so
 			modified = null;
-		} else if(modifiedObject instanceof String) {
+		}
+		else if (modifiedObject instanceof String) {
+			// Modified time given; parse it
 			try {
-				//Modified time given; parse it
-				modified = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).parse((String) modifiedObject);
+				modified = ISO8601DateParser.parse((String) modifiedObject);
 			} catch (ParseException e) {
-				e.printStackTrace();
+				//Parse error
+				modified = null;
 			}
 		}
 	}
@@ -218,7 +221,8 @@ public class Colony implements JSONSerializable {
 	@Override
 	public String toString() {
 		return "Colony #" + id + " at (" + x + ", " + y + "), "
-				+ (active ? "active" : "inactive")+", "+(visited ? "visited" : "not visited");
+				+ (active ? "active" : "inactive") + ", "
+				+ (visited ? "visited" : "not visited");
 	}
 
 	/*

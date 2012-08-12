@@ -36,14 +36,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@android:string/cancel" />
+            android:text="@android:string/cancel"
+            android:textSize="80dp"
+            android:background="@drawable/blue_button_background"/>
 
         <Button
             android:id="@+id/okButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@android:string/ok" />
+            android:background="@drawable/green_button_background"
+            android:text="@android:string/ok"
+            android:textSize="80dp" />
 
     </LinearLayout>
 

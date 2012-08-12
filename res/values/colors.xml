@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="green_up_top">#25F772</color>
+    <color name="green_up_bottom">#3DCC72</color>
+    <color name="green_border">#ABABAB</color>
+    <color name="green_pressed_top">#07EB5A</color>
+    <color name="green_pressed_bottom">#06BA48</color>
+    
+    <color name="blue_up_top">#26C9FF</color>
+    <color name="blue_up_bottom">#22A9D6</color>
+    <color name="blue_pressed_top">#3BF2FF</color>
+    <color name="blue_pressed_bottom">#1ECCD9</color>
+    <color name="blue_border">#ABABAB</color>
+</resources>

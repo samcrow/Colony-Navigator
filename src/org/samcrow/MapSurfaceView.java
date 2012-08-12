@@ -29,30 +29,19 @@ import android.view.View;
 public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 	// Colony location reference points
-
-	public static final double colony415Latitude = 31.870901;
-	public static final double colony415Longitude = -109.044345;
-	public static final MapPoint colony415 = getColony415();
-
-	public static final double colony928Latitude = 31.873036;
-	public static final double colony928Longitude = -109.038751;
-	public static final MapPoint colony928 = getColony928();
+	private static final MapPoint topLeft = new MapPoint(provider.getColonies().getById(962), 31.87265776, -109.04243);
+	private static final MapPoint bottomRight = new MapPoint(provider.getColonies().getById(980), 31.87087500797029, -109.03870950670428);
+	private static final MapPoint bottomLeft = new MapPoint(provider.getColonies().getById(567), 31.871036, -109.042678);
+	private static final MapPoint topRight = new MapPoint(provider.getColonies().getById(442), 31.872357, -109.0391114);
 
 	private CoordinateTransformer transform = new CoordinateTransformer(
-			colony415, colony928);
+			topLeft, topRight, bottomRight/*, bottomLeft*/);
+
+	//Hack to make this accessible to the location listener
+	public static MapSurfaceView instance;
 
 	{
-		float averageLongitude = (float) ((colony415Longitude + colony928Longitude) / 2.0);
-		float averageLatitude = (float) ((colony415Latitude + colony928Latitude) / 2.0);
-
-		PointF center = transform.toLocal(averageLongitude, averageLatitude);
-
-		System.out.println("Colony 415 (" + colony415.getX() + ", "
-				+ colony415.getY() + ")");
-		System.out.println("Colony 928 (" + colony928.getX() + ", "
-				+ colony928.getY() + ")");
-		System.out.println("Lat/lon center to local (" + center.x + ", "
-				+ center.y + ")");
+		instance = this;
 	}
 
 	/**
@@ -359,8 +348,8 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	 * @param selectedColony the colony to set
 	 */
 	public synchronized void setSelectedColony(Colony selectedColony) {
-		boolean changed = selectedColony != this.selectedColony;
-		this.selectedColony = selectedColony;
+		boolean changed = selectedColony != MapSurfaceView.selectedColony;
+		MapSurfaceView.selectedColony = selectedColony;
 		if(changed) {
 			invalidate();
 		}
@@ -419,30 +408,6 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 	@Override
 	public void onScaleEnd(ScaleGestureDetector detector) {
-	}
-
-	private static final MapPoint getColony415() {
-
-		for (Colony colony :  provider.getColonies()) {
-			if (colony.getId() == 415) {
-				return new MapPoint(colony, colony415Latitude,
-						colony415Longitude);
-			}
-		}
-
-		return null;
-	}
-
-	private static final MapPoint getColony928() {
-
-		for (Colony colony :  provider.getColonies()) {
-			if (colony.getId() == 928) {
-				return new MapPoint(colony, colony928Latitude,
-						colony928Longitude);
-			}
-		}
-
-		return null;
 	}
 
 	/**

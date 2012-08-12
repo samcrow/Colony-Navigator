@@ -3,6 +3,7 @@ package org.samcrow;
 import org.samcrow.data.Colony;
 import org.samcrow.data.provider.ColonyProvider;
 import org.samcrow.data.provider.MemoryCardDataProvider;
+import org.samcrow.help.HelpActivity;
 import org.samcrow.stanford.R;
 
 import android.app.Activity;
@@ -64,8 +65,19 @@ public class ColonyNavigatorActivity extends Activity {
 
 		});
 
+		//Handler to show the help view
+		((Button) findViewById(R.id.helpButton)).setOnClickListener(new OnClickListener() {
 
-		Button okButton = (Button) findViewById(R.id.colonyOkButton);
+			@Override
+			public void onClick(View view) {
+				//Start the help activity
+				startActivity(new Intent(ColonyNavigatorActivity.this, HelpActivity.class));
+			}
+
+		});
+
+
+		final Button okButton = (Button) findViewById(R.id.colonyOkButton);
 		okButton.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -78,6 +90,10 @@ public class ColonyNavigatorActivity extends Activity {
 		editButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View arg0) {
+				//Virtually click the OK button to ensure that the colony with
+				//its ID typed in the field will be edited
+				okButton.performClick();
+
 				if(mapView.getSelectedColony() != null) {
 					Intent detailsIntent = new Intent(ColonyNavigatorActivity.this, ColonyDetailsActivity.class);
 					//Start the activity to update the current colony
@@ -96,6 +112,7 @@ public class ColonyNavigatorActivity extends Activity {
 	 * Request for the listener to receive location updates
 	 */
 	private void requestLocationUpdates() {
+
 		Criteria gpsCriteria = new Criteria();
 		gpsCriteria.setAccuracy(Criteria.ACCURACY_FINE);
 		gpsCriteria.setHorizontalAccuracy(Criteria.ACCURACY_HIGH);
@@ -104,7 +121,7 @@ public class ColonyNavigatorActivity extends Activity {
 		gpsCriteria.setSpeedAccuracy(Criteria.NO_REQUIREMENT);
 
 		LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-		locationManager.requestLocationUpdates(1000, 0, gpsCriteria,
+		locationManager.requestLocationUpdates(10, 0, gpsCriteria,
 				listener, null);
 	}
 

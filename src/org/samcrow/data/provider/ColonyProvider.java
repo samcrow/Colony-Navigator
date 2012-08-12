@@ -1,8 +1,7 @@
 package org.samcrow.data.provider;
 
-import java.util.Set;
-
 import org.samcrow.data.Colony;
+import org.samcrow.data.ColonySet;
 
 /**
  * An interface for a class that can get colonies and update their information.
@@ -15,7 +14,7 @@ public interface ColonyProvider {
 	 * This method should not block.
 	 * @return The colonies, or null if the colonies are not currently available
 	 */
-	public Set<Colony> getColonies();
+	public ColonySet getColonies();
 
 	/**
 	 * Take all the colonies (the same reference as returned by {@link #getColonies()})

@@ -38,6 +38,10 @@ public class NavigatorLocationListener implements LocationListener {
 				.getLatitude()));
 		ColonyNavigatorActivity.longitudeField.setText(String.valueOf(location
 				.getLongitude()));
+
+		if(MapSurfaceView.instance != null) {
+			MapSurfaceView.instance.postInvalidate();
+		}
 	}
 
 	/*

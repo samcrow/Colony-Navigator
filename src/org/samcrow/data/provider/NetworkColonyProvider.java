@@ -6,12 +6,12 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.samcrow.data.Colony;
+import org.samcrow.data.ColonySet;
 import org.samcrow.data.io.JSONParser;
 
 import android.os.Looper;
@@ -44,7 +44,7 @@ public class NetworkColonyProvider implements ColonyProvider {
 	/**
 	 * The current set of colonies
 	 */
-	private volatile Set<Colony> colonies;
+	private volatile ColonySet colonies;
 
 	/**
 	 * Constructor
@@ -64,7 +64,7 @@ public class NetworkColonyProvider implements ColonyProvider {
 	 * @see org.samcrow.data.provider.ColonyProvider#getColonies()
 	 */
 	@Override
-	public Set<Colony> getColonies() {
+	public ColonySet getColonies() {
 		return colonies;
 	}
 
@@ -200,7 +200,7 @@ public class NetworkColonyProvider implements ColonyProvider {
 				String line = waitForLine();
 
 				try {
-					colonies = new JSONParser().parseAll(new JSONObject(line).getJSONArray("colonies"));
+					colonies = new ColonySet(new JSONParser().parseAll(new JSONObject(line).getJSONArray("colonies")));
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}

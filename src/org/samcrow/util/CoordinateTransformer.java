@@ -22,28 +22,39 @@ public class CoordinateTransformer {
 	/**
 	 * Constructor that uses the local position and latitude/longitude of 2
 	 * points to calculate offsets, rotation, & scale
-	 * 
-	 * @param point1
-	 *            One point to use as a reference. This is the point that is
-	 *            used to calculate offsets.
-	 * @param point2
-	 *            Another point to use as a reference
+	 * @param points Up to 4 points to use to map coordinates
 	 */
-	public CoordinateTransformer(MapPoint point1, MapPoint point2) {
+	public CoordinateTransformer(MapPoint... points) {
+
+		if(points.length > 4) {
+			throw new IllegalArgumentException("Cannot use more than 4 points.");
+		}
 
 		matrix = new Matrix();
 
-		float[] sourcePoints = new float[] { (float) point1.getLongitude(), // x0
-				(float) point1.getLatitude(), // y0
-				(float) point2.getLongitude(), // x1
-				(float) point2.getLatitude() // y1
-		};
+		float[] sourcePoints = new float[points.length * 2];
 
-		float[] destPoints = new float[] { (float) point1.getX(),
-				(float) point1.getY(), (float) point2.getX(),
-				(float) point2.getY() };
+		float[] destPoints = new float[points.length * 2];
 
-		matrix.setPolyToPoly(sourcePoints, 0, destPoints, 0, 2);
+		int i = 0;
+		for(MapPoint point : points) {
+			//Source points: latitude/longitude
+			sourcePoints[2 * i] = (float) point.getLongitude(); //Longitude = x
+			System.out.println("X (lon) "+2*i+" "+sourcePoints[2*i]);
+			sourcePoints[2 * i + 1] = (float) point.getLatitude();//Latitude = y
+			System.out.println("Y (lat) "+(2*i+1)+" "+sourcePoints[2*i+1]);
+
+
+			//Destination points: colony coordinates
+			destPoints[2 * i] = (float) point.getX();
+			System.out.println("Dest X "+2*i+" "+destPoints[2*i]);
+			destPoints[2 * i + 1] = (float) point.getY();
+			System.out.println("Dest Y "+(2*i+1)+" "+destPoints[2*i+1]);
+
+			i++;
+		}
+
+		matrix.setPolyToPoly(sourcePoints, 0, destPoints, 0, points.length);
 
 		System.out.println(matrix);
 	}
