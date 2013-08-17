@@ -1,14 +1,14 @@
 package org.samcrow.data;
 
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 /**
  * A set of colonies, with additional methods
  * for accessing colonies by various criteria
  * @author Sam Crow
  */
-public class ColonySet extends HashSet<Colony> {
+public class ColonySet extends LinkedHashSet<Colony> {
 
 
 	public ColonySet() {

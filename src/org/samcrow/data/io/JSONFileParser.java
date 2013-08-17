@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.text.DateFormat;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.json.JSONArray;
@@ -34,7 +34,7 @@ public class JSONFileParser extends JSONParser implements FileParser<Colony> {
 
 	@Override
 	public Set<Colony> parse() {
-		Set<Colony> colonies = new HashSet<Colony>();
+		Set<Colony> colonies = new LinkedHashSet<Colony>();
 
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(file));

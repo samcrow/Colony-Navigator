@@ -7,7 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.samcrow.data.Colony;
@@ -31,7 +31,7 @@ public class CSVFileParser extends CSVParser implements FileParser<Colony> {
 	@Override
 	public Set<Colony> parse() {
 
-		Set<Colony> colonies = new HashSet<Colony>();
+		Set<Colony> colonies = new LinkedHashSet<Colony>();
 
 		try {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));

@@ -31,11 +31,34 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	// Colony location reference points
 	private static final MapPoint topLeft = new MapPoint(provider.getColonies().getById(962), 31.87265776, -109.04243);
 	private static final MapPoint bottomRight = new MapPoint(provider.getColonies().getById(980), 31.87087500797029, -109.03870950670428);
+	@SuppressWarnings("unused")
 	private static final MapPoint bottomLeft = new MapPoint(provider.getColonies().getById(567), 31.871036, -109.042678);
 	private static final MapPoint topRight = new MapPoint(provider.getColonies().getById(442), 31.872357, -109.0391114);
 
 	private CoordinateTransformer transform = new CoordinateTransformer(
 			topLeft, topRight, bottomRight/*, bottomLeft*/);
+	
+	/**
+	 * Background shape alpha (transparency), 0-255
+	 */
+	private static final int BG_ALPHA = 100;
+	/**
+	 * Background color for non-focus, non-visited colonies
+	 */
+	private static final int BG_NORMAL_COLOR = Color.argb(BG_ALPHA / 2, 100, 100, 100); // gray
+	/**
+	 * Background color for focus colonies
+	 */
+	private static final int BG_FOCUS_COLOR = Color.argb(BG_ALPHA, 115, 140, 255); // blue
+	/**
+	 * Background color for visited colonies, both focus and non-focus
+	 */
+	private static final int BG_VISITED_COLOR = Color.argb(BG_ALPHA, 77, 240, 101); // green
+	
+	/**
+	 * Background circle radius
+	 */
+	private static final int BG_RADIUS = 20;
 
 	//Hack to make this accessible to the location listener
 	public static MapSurfaceView instance;
@@ -85,9 +108,10 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 	/**
 	 * A paint object that enables antialiasing
 	 */
-	private static final Paint kAntiAliasPaint = new Paint();
+	private static final Paint paint = new Paint();
+	private Path triangle = new Path();
 	static {
-		kAntiAliasPaint.setAntiAlias(true);
+		paint.setAntiAlias(true);
 	}
 
 	/* Static import colonies from ColonyNavigatoActivity */
@@ -171,9 +195,9 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 						if(colony == selectedColony) {
 							//Draw the colony in red with a larger circle
-							kAntiAliasPaint.setColor(Color.RED);
+							paint.setColor(Color.RED);
 							canvas.drawCircle(points[0],
-									points[1], 4, kAntiAliasPaint);
+									points[1], 4, paint);
 
 							//Draw some extra accoutrements around it
 
@@ -184,45 +208,66 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 							//Length of the triangle
 							final short triLength = 20;
 
-							//Top triangle
-							Path triangle = new Path();
+							triangle.reset();
 							triangle.moveTo(points[0], points[1] - triOffset * scale);
 							triangle.lineTo((float) (points[0] + (triWidth / 2.0) * scale), points[1] - (triOffset + triLength) * scale);
 							triangle.lineTo((float) (points[0] - (triWidth / 2.0) * scale), points[1] - (triOffset + triLength) * scale);
 							triangle.close();
 
-							canvas.drawPath(triangle, kAntiAliasPaint);
+							canvas.drawPath(triangle, paint);
 
 							//Bottom triangle
-							triangle = new Path();
+							triangle.reset();
 							triangle.moveTo(points[0], points[1] + triOffset * scale);
 							triangle.lineTo((float) (points[0] + (triWidth / 2.0) * scale), points[1] + (triOffset + triLength) * scale);
 							triangle.lineTo((float) (points[0] - (triWidth / 2.0) * scale), points[1] + (triOffset + triLength) * scale);
 							triangle.close();
 
-							canvas.drawPath(triangle, kAntiAliasPaint);
+							canvas.drawPath(triangle, paint);
 
 							//Left triangle
-							triangle = new Path();
+							triangle.reset();
 							triangle.moveTo(points[0] - triOffset * scale, points[1]);
 							triangle.lineTo(points[0] - (triOffset + triLength) * scale, (float) (points[1] + (triWidth / 2.0) * scale));
 							triangle.lineTo(points[0] - (triOffset + triLength) * scale, (float) (points[1] - (triWidth / 2.0) * scale));
 							triangle.close();
 
-							canvas.drawPath(triangle, kAntiAliasPaint);
+							canvas.drawPath(triangle, paint);
 
 						}
 						else {//Not selected, draw it as usual
-							kAntiAliasPaint.setColor(Color.BLACK);
+							//Draw the colony in a different color if it has not been visited
+							if(!colony.isVisited()) {
+								if(colony.isFocusColony()) {
+									//Draw a semitransparent circle
+									paint.setColor(BG_FOCUS_COLOR);
+									canvas.drawCircle(points[0], points[1], BG_RADIUS, paint);
+								}
+								else {
+									//Draw a semitransparent circle
+									paint.setColor(BG_NORMAL_COLOR);
+									canvas.drawCircle(points[0], points[1], BG_RADIUS, paint);
+								}
+								
+								paint.setColor(Color.BLACK);
+							}
+							else {
+								//Draw a semitransparent circle
+								paint.setColor(BG_VISITED_COLOR);
+								canvas.drawCircle(points[0], points[1], BG_RADIUS, paint);
+								
+								//Draw the colony in a different color
+								paint.setColor(Color.GREEN);
+							}
 							canvas.drawCircle(points[0],
-									points[1], 2, kAntiAliasPaint);
+									points[1], 2, paint);
 						}
 
-						kAntiAliasPaint.setColor(colonyLabelColor);
-						kAntiAliasPaint.setTextSize(10 * scale);
+						paint.setColor(colonyLabelColor);
+						paint.setTextSize(10 * scale);
 						canvas.drawText(String.valueOf(colony.getId()),
 								points[0] + 2 * scale, points[1] + 3 * scale,
-								kAntiAliasPaint);
+								paint);
 					}
 				}
 			}
@@ -237,27 +282,27 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 			if(inWindow(locationPoint)) {
 				//Draw a circle at the user's current location
-				canvas.drawCircle(locationPoint[0], locationPoint[1], 5 * scale, kAntiAliasPaint);
+				canvas.drawCircle(locationPoint[0], locationPoint[1], 5 * scale, paint);
 			}
 
 			if(selectedColony != null) {
 				//Have location and selected colony
 				//Draw a line between them
-				int oldColor = kAntiAliasPaint.getColor();
-				kAntiAliasPaint.setColor(Color.GREEN);
-				kAntiAliasPaint.setColor(oldColor);
+				int oldColor = paint.getColor();
+				paint.setColor(Color.GREEN);
+				paint.setColor(oldColor);
 
 				float[] selectedPoint = new float[] { (float) selectedColony.getX(), (float) selectedColony.getY() };
 				displayTransform.mapPoints(selectedPoint);
 
-				canvas.drawLine(locationPoint[0], locationPoint[1], selectedPoint[0], selectedPoint[1], kAntiAliasPaint);
+				canvas.drawLine(locationPoint[0], locationPoint[1], selectedPoint[0], selectedPoint[1], paint);
 
 			}
 		}
 
 		// Static map elements
-		kAntiAliasPaint.setColor(Color.BLUE);
-		kAntiAliasPaint.setStrokeWidth(10);
+		paint.setColor(Color.BLUE);
+		paint.setStrokeWidth(10);
 
 		//Portal road
 		float[] portalRoadA = new float[] { -100, -25 };
@@ -265,9 +310,9 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 		displayTransform.mapPoints(portalRoadA);
 		displayTransform.mapPoints(portalRoadB);
 		canvas.drawLine(portalRoadA[0], portalRoadA[1], portalRoadB[0], portalRoadB[1],
-				kAntiAliasPaint);
+				paint);
 
-		kAntiAliasPaint.setStrokeWidth(5);
+		paint.setStrokeWidth(5);
 
 		//
 		//		canvas.drawLine(1350, transformY(250), 1230, transformY(1000),
@@ -408,24 +453,5 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 	@Override
 	public void onScaleEnd(ScaleGestureDetector detector) {
-	}
-
-	/**
-	 * Set the view to be centered on a colony
-	 * @param colony The colony to center the view on
-	 */
-	public void centerViewOn(Colony colony) {
-		float[] point = new float[] { (float) colony.getX(), (float) colony.getY() };
-
-		//Get the in-view coordinates of the colony
-		displayTransform.mapPoints(point);
-		//point is now the location of the selected colony on the screen in pixels from the top left corner
-
-
-		relativeX = (float) (getWidth() / 2.0) - point[0];
-
-		relativeY = -(point[1] - (getWidth() / 2f));
-
-		invalidate();
 	}
 }

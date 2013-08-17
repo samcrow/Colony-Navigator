@@ -30,11 +30,7 @@ public class ColonyNavigatorActivity extends Activity {
 	public static final ColonyProvider provider = new MemoryCardDataProvider();
 
 	private MapSurfaceView mapView;
-
-	public static TextView longitudeField;
-
-	public static TextView latitudeField;
-
+	
 	private EditText colonyField;
 
 	private LocationListener listener = new NavigatorLocationListener();
@@ -47,8 +43,6 @@ public class ColonyNavigatorActivity extends Activity {
 		setContentView(R.layout.main);
 
 		mapView = (MapSurfaceView) findViewById(R.id.mapView);
-		latitudeField = (TextView) findViewById(R.id.latitudeField);
-		longitudeField = (TextView) findViewById(R.id.longitudeField);
 
 		colonyField = (EditText) findViewById(R.id.colonyField);
 		colonyField.setOnEditorActionListener(new OnEditorActionListener() {
@@ -140,7 +134,6 @@ public class ColonyNavigatorActivity extends Activity {
 				if(colony.getId() == id) {
 					//Found the colony
 					mapView.setSelectedColony(colony);
-					mapView.centerViewOn(colony);
 
 					//Hide the keyboard
 					InputMethodManager imm = (InputMethodManager)getSystemService(

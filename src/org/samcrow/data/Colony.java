@@ -12,7 +12,7 @@ import org.json.JSONObject;
  * 
  * @author Sam Crow
  */
-public class Colony implements JSONSerializable {
+public class Colony implements JSONSerializable, Comparable<Colony> {
 
 	/**
 	 * Constructor
@@ -153,6 +153,23 @@ public class Colony implements JSONSerializable {
 	protected final void updateModifiedDate() {
 		modified = new Date();
 	}
+	
+	/**
+	 * If this colony is a focus colony
+	 */
+	private boolean focus;
+
+	/**
+	 * Determines if this colony is a focus colony, as defined in the file
+	 * @return
+	 */
+	public boolean isFocusColony() {
+		return focus;
+	}
+	
+	public void setFocusColony(boolean focus) {
+		this.focus = focus;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -242,6 +259,23 @@ public class Colony implements JSONSerializable {
 		temp = Double.doubleToLongBits(y);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		return result;
+	}
+	
+	/**
+	 * Compares two colonies by their ID
+	 * @see Comparable#compareTo(Object)
+	 * @param other
+	 * @return
+	 */
+	@Override
+	public int compareTo(Colony other) {
+		if(this.getId() < other.getId()) {
+			return -1;
+		}
+		if(this.getId() > other.getId()) {
+			return 1;
+		}
+		return 0;
 	}
 
 	/*

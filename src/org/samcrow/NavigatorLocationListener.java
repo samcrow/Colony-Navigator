@@ -34,11 +34,6 @@ public class NavigatorLocationListener implements LocationListener {
 	public void onLocationChanged(Location location) {
 		currentLocation = location;
 
-		ColonyNavigatorActivity.latitudeField.setText(String.valueOf(location
-				.getLatitude()));
-		ColonyNavigatorActivity.longitudeField.setText(String.valueOf(location
-				.getLongitude()));
-
 		if(MapSurfaceView.instance != null) {
 			MapSurfaceView.instance.postInvalidate();
 		}
