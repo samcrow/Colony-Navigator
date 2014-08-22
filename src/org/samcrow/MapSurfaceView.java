@@ -16,6 +16,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.location.Location;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -236,6 +237,13 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 
 						}
 						else {//Not selected, draw it as usual
+							
+							//Colony draw information:
+							//Focus & not visited: blue
+							//Focus & visited: blue & green
+							//Normal & not visited: gray
+							//Normal & visited: green
+							
 							//Draw the colony in a different color if it has not been visited
 							if(!colony.isVisited()) {
 								if(colony.isFocusColony()) {
@@ -252,9 +260,21 @@ public class MapSurfaceView extends View implements OnScaleGestureListener {
 								paint.setColor(Color.BLACK);
 							}
 							else {
-								//Draw a semitransparent circle
-								paint.setColor(BG_VISITED_COLOR);
-								canvas.drawCircle(points[0], points[1], BG_RADIUS, paint);
+								if(colony.isFocusColony()) {
+									//Focus and visited. Split the circle into two parts
+									//Left side blue
+									paint.setColor(BG_FOCUS_COLOR);
+									RectF bgRect = new RectF( (float)( points[0] - BG_RADIUS), (float)( points[1] - BG_RADIUS), (float)( points[0] + BG_RADIUS), (float)( points[1] + BG_RADIUS));
+									canvas.drawArc(bgRect, 90, 180, true, paint);
+									//Right side green
+									paint.setColor(BG_VISITED_COLOR);
+									canvas.drawArc(bgRect, -90, 180, true, paint);
+								}
+								else {
+									//Draw a semitransparent circle
+									paint.setColor(BG_VISITED_COLOR);
+									canvas.drawCircle(points[0], points[1], BG_RADIUS, paint);
+								}
 								
 								//Draw the colony in a different color
 								paint.setColor(Color.GREEN);
